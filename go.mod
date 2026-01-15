@@ -3,7 +3,6 @@ module github.com/Joey574/stats
 go 1.25.5
 
 require (
-	github.com/Joey574/stats/v2 v2.0.0-20260115224547-8c491bf54b4f
 	github.com/gocarina/gocsv v0.0.0-20240520201108-78e41c74b4b1
 	github.com/jessevdk/go-flags v1.6.1
 	github.com/olekukonko/tablewriter v1.1.2
