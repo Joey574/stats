@@ -34,7 +34,9 @@ type CompiledTable struct {
 
 func printHeader() {
 	fmt.Println(
-		`Definitions:
+		`v1.0.1
+
+Definitions:
 	Mean: The average value among the provided data points
 	Stddev: The average distance individual points are from the mean
 	SEM (Standard Error of the Mean): The uncertainty in the best estimate
