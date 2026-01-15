@@ -6,8 +6,8 @@ import (
 	"math"
 	"strings"
 
-	"github.com/Joey574/stats/v2/internal/stats"
-	"github.com/Joey574/stats/v2/internal/table"
+	"github.com/Joey574/stats/internal/stats"
+	"github.com/Joey574/stats/internal/table"
 	"github.com/jessevdk/go-flags"
 	"github.com/olekukonko/tablewriter"
 )

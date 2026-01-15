@@ -1,3 +1,5 @@
+github.com/Joey574/stats/v2 v2.0.0-20260115224547-8c491bf54b4f h1:gxhwN95OhWnB+QwpYXf8CQSIBRK1evgqr04Va9WeZTo=
+github.com/Joey574/stats/v2 v2.0.0-20260115224547-8c491bf54b4f/go.mod h1:+KW+iSIEf0E3oCTmG5gJFEK06aqDzjXkWWZbfmmvrv4=
 github.com/clipperhouse/displaywidth v0.6.0 h1:k32vueaksef9WIKCNcoqRNyKbyvkvkysNYnAWz2fN4s=
 github.com/clipperhouse/displaywidth v0.6.0/go.mod h1:R+kHuzaYWFkTm7xoMmK1lFydbci4X2CicfbGstSGg0o=
 github.com/clipperhouse/stringish v0.1.1 h1:+NSqMOr3GR6k1FdRhhnXrLfztGzuG+VuFDfatpWHKCs=
