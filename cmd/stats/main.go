@@ -67,7 +67,6 @@ func (t *CompiledTable) Dump() string {
 	b.WriteString(fmt.Sprintf("\nTable: %s\n", t.Table.Name))
 	rowTable := tablewriter.NewWriter(&b)
 	rowTable.Header([]string{"Idx", "Diff", "Error"})
-	//rowTable.SetBorder(true)
 
 	for i, r := range t.Rows {
 		diffStr, errStr := "N/A", "N/A"
