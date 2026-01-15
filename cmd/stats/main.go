@@ -34,7 +34,7 @@ type CompiledTable struct {
 
 func printHeader() {
 	fmt.Println(
-		`v1.0.1
+		`v0.0.1
 
 Definitions:
 	Mean: The average value among the provided data points
