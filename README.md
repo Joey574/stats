@@ -3,7 +3,7 @@ My personal statistics program to help be get through PHYS 121
 
 ## Download
 ``` bash
-go install github.com/Joey574/stats/cmd/stats@latest
+go install github.com/Joey574/stats/cmd/stats@v0.0.2
 ```
 
 ## Usage
