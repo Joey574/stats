@@ -5,6 +5,7 @@ import (
 	"log"
 	"math"
 	"os"
+	"runtime/debug"
 	"sync"
 
 	"github.com/Joey574/stats/internal/stats"
@@ -17,7 +18,7 @@ type CLIArgs struct {
 	Version bool   `long:"version" description:"prints version and exits"`
 }
 
-const version = "v0.0.2"
+var version string
 
 func printHeader() {
 	fmt.Println(version)
@@ -33,6 +34,13 @@ Definitions:
 }
 
 func main() {
+	info, ok := debug.ReadBuildInfo()
+	if !ok {
+		version = "unknown"
+	} else {
+		version = info.Main.Version
+	}
+
 	var f CLIArgs
 
 	parser := flags.NewParser(&f, flags.Default)
