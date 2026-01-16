@@ -4,38 +4,23 @@ import (
 	"fmt"
 	"log"
 	"math"
-	"strings"
+	"sync"
 
 	"github.com/Joey574/stats/internal/stats"
 	"github.com/Joey574/stats/internal/table"
 	"github.com/jessevdk/go-flags"
-	"github.com/olekukonko/tablewriter"
 )
 
 type CLIArgs struct {
 	File string `short:"f" long:"file" description:"csv file to read data from"`
 }
 
-type CompiledCol struct {
-	Name string
-	stats.Data
-}
-
-type CompiledRow struct {
-	table.Row
-	stats.RowData
-}
-
-type CompiledTable struct {
-	Table *table.Table
-	Cols  []*CompiledCol
-	Rows  []*CompiledRow
-}
+const version = "v0.0.2"
 
 func printHeader() {
+	fmt.Println(version)
 	fmt.Println(
-		`v0.0.1
-
+		`
 Definitions:
 	Mean: The average value among the provided data points
 	Stddev: The average distance individual points are from the mean
@@ -45,51 +30,15 @@ Definitions:
 	fmt.Println()
 }
 
-func (t *CompiledTable) Dump() string {
-	var b strings.Builder
-
-	// --- Metadata/Column Stats Table ---
-	b.WriteString(fmt.Sprintf("Table: %s\n", t.Table.Name))
-	colTable := tablewriter.NewWriter(&b)
-	colTable.Header([]string{"Key", "Mean", "Stddev", "SEM", "CI95", "CV"})
-
-	for _, k := range t.Cols {
-		colTable.Append([]string{
-			k.Name,
-			fmt.Sprintf("%.2f", k.Mean),
-			fmt.Sprintf("%.2f", k.Stddev),
-			fmt.Sprintf("%.2f", k.Sem),
-			fmt.Sprintf("±%.2f", k.CI95),
-			fmt.Sprintf("%.2f%%", k.CV),
-		})
-	}
-	colTable.Render()
-
-	// --- Per Row Table ---
-	b.WriteString(fmt.Sprintf("\nTable: %s\n", t.Table.Name))
-	rowTable := tablewriter.NewWriter(&b)
-	rowTable.Header([]string{"Idx", "Diff", "Error"})
-
-	for i, r := range t.Rows {
-		diffStr, errStr := "N/A", "N/A"
-		if r.Diff != nil {
-			diffStr = fmt.Sprintf("%.2f%%", *r.Diff)
-		}
-		if r.Error != nil {
-			errStr = fmt.Sprintf("%.2f%%", *r.Error)
-		}
-		rowTable.Append([]string{fmt.Sprintf("%d", i), diffStr, errStr})
-	}
-	rowTable.Render()
-
-	return b.String()
-}
-
 func main() {
 	var f CLIArgs
 
+	parser := flags.NewParser(&f, flags.Default)
+	parser.Name = "stats"
+	parser.ShortDescription = version
+
 	// read in arguments
-	_, err := flags.Parse(&f)
+	_, err := parser.Parse()
 	if err != nil {
 		if !flags.WroteHelp(err) {
 			log.Fatalln(err)
@@ -102,10 +51,22 @@ func main() {
 		log.Fatalln(tables)
 	}
 
-	// print out compiled data
 	printHeader()
-	for _, t := range tables {
-		ct := compile(t)
+
+	// compile tables in parallel
+	var wg sync.WaitGroup
+	compiled := make([]*CompiledTable, len(tables))
+	for i, t := range tables {
+		wg.Add(1)
+		go func(idx int) {
+			defer wg.Done()
+			compiled[idx] = compile(t)
+		}(i)
+	}
+	wg.Wait()
+
+	// dump data
+	for _, ct := range compiled {
 		fmt.Println(ct.Dump())
 	}
 }

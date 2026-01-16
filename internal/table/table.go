@@ -24,7 +24,7 @@ type Table struct {
 	Rows []*Row
 }
 
-func ParseTables(f string) (map[string]*Table, error) {
+func ParseTables(f string) ([]*Table, error) {
 	in, err := os.Open(f)
 	if err != nil {
 		return nil, err
@@ -53,5 +53,10 @@ func ParseTables(f string) (map[string]*Table, error) {
 		tables[d.Table].Rows = append(tables[d.Table].Rows, r)
 	}
 
-	return tables, nil
+	tableSlice := make([]*Table, 0, len(tables))
+	for _, v := range tables {
+		tableSlice = append(tableSlice, v)
+	}
+
+	return tableSlice, nil
 }
