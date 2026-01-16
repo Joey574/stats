@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log"
 	"math"
+	"os"
 	"sync"
 
 	"github.com/Joey574/stats/internal/stats"
@@ -12,7 +13,8 @@ import (
 )
 
 type CLIArgs struct {
-	File string `short:"f" long:"file" description:"csv file to read data from"`
+	File    string `short:"f" long:"file" description:"csv file to read data from"`
+	Version bool   `long:"version" description:"prints version and exits"`
 }
 
 const version = "v0.0.2"
@@ -43,12 +45,18 @@ func main() {
 		if !flags.WroteHelp(err) {
 			log.Fatalln(err)
 		}
+		os.Exit(0)
+	}
+
+	if f.Version {
+		fmt.Println(version)
+		os.Exit(0)
 	}
 
 	// read in csv
 	tables, err := table.ParseTables(f.File)
 	if err != nil {
-		log.Fatalln(tables)
+		log.Fatalln(err)
 	}
 
 	printHeader()
