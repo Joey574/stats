@@ -18,7 +18,7 @@ type CLIArgs struct {
 	File    string `short:"f" long:"file"    description:"csv file to read data from"`
 	Version bool   `short:"v" long:"version" description:"prints version and exits"`
 
-	Renderer string `short:"r" long:"renderer" description:"configures the renderer used for the table (text, svg, html, color)" default:"text"`
+	Renderer string `short:"r" long:"renderer" description:"configures the renderer used for the table (text, svg, html, color, markdown)" default:"text"`
 }
 
 var version string
@@ -101,6 +101,8 @@ func main() {
 		r = renderer.NewSVG()
 	case "color":
 		r = renderer.NewColorized()
+	case "markdown":
+		r = renderer.NewMarkdown()
 	default:
 		log.Fatalln("unsuported renderer", f.Renderer)
 	}

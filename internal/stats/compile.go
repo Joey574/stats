@@ -2,7 +2,6 @@ package stats
 
 import (
 	"fmt"
-	"slices"
 	"strings"
 
 	"github.com/Joey574/stats/internal/table"
@@ -41,9 +40,7 @@ func (c *CompiledTable) Dump(renderer tw.Renderer) string {
 	writer.Header(head)
 
 	for _, r := range c.Rows {
-		strs := r.Compose()
-		strs = append(strs, slices.Repeat([]string{"-"}, len(head)-len(strs))...)
-		writer.Append(strs)
+		writer.Append(r.Compose())
 	}
 
 	writer.Render()

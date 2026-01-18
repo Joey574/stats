@@ -52,6 +52,9 @@ func ParseTables(f string) ([]Table, error) {
 		return nil, err
 	}
 
+	keys := slices.Clone(header)
+	keys = slices.DeleteFunc(keys, func(x string) bool { return x == "table" || x == "units" })
+
 	tableMap := make(map[string]*Table)
 	for _, row := range records {
 		item := Record{}
@@ -82,7 +85,7 @@ func ParseTables(f string) ([]Table, error) {
 		if _, ok := tableMap[tableName]; !ok {
 			tableMap[tableName] = &Table{
 				Name: tableName,
-				Keys: header,
+				Keys: keys,
 			}
 		}
 
@@ -107,7 +110,7 @@ func (t *Table) Headers() []string {
 }
 
 func (t *Table) Size() (int, int) {
-	return len(t.Rows) + 1, len(t.Keys)
+	return len(t.Rows) + 1, len(t.Headers())
 }
 
 func (r *Record) Compose() []string {

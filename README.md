@@ -3,7 +3,7 @@ My personal statistics program to help be get through PHYS 121
 
 ## Download
 ``` bash
-go install github.com/Joey574/stats/cmd/stats@v0.0.5
+go install github.com/Joey574/stats/cmd/stats@v0.0.6
 ```
 
 ## Usage
@@ -12,20 +12,12 @@ go install github.com/Joey574/stats/cmd/stats@v0.0.5
 stats -f path/to/csv/file.csv
 ```
 
-You can also render to different formats, currently suports *text, color, svg, html*, defaults to text
+You can also render to different formats, currently suports *text, color, svg, html, markdown*, defaults to text
 ``` bash
 stats -f path/to/csv/file.csv -r svg
 ```
 
 ### CSV Examples
-Stats expects a csv in the form ```x,y,truth,table```
-
-* x -> represents our meassured value (numerical)
-* y -> represents the value we want to compare against (numerical)
-* truth -> represents the ground truth value (numerical)
-* table -> defines the name for the table and which entries it should be groupped with (string)
-
-
 Base case
 ``` csv
 table,label,units,x1,x2,x3
