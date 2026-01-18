@@ -1,62 +1,109 @@
 package table
 
 import (
+	"encoding/csv"
 	"os"
-
-	"github.com/gocarina/gocsv"
+	"slices"
+	"strings"
 )
-
-type Data struct {
-	X     *float64 `csv:"x,omitempty"`
-	Y     *float64 `csv:"y,omitempty"`
-	Truth *float64 `csv:"truth,omitempty"`
-	Table string   `csv:"table"`
-}
-
-type Row struct {
-	X     *float64
-	Y     *float64
-	Truth *float64
-}
 
 type Table struct {
 	Name string
-	Rows []*Row
+	Keys []string
+	Rows []*Record
 }
 
-func ParseTables(f string) ([]*Table, error) {
-	in, err := os.Open(f)
+type Record struct {
+	Label string
+	Units string
+
+	Values []string
+}
+
+const nilTable = "no name"
+const nilValue = "-"
+
+func ParseTables(f string) ([]Table, error) {
+	bytes, err := os.ReadFile(f)
 	if err != nil {
 		return nil, err
 	}
-	defer in.Close()
 
-	data := []*Data{}
-	if err := gocsv.UnmarshalFile(in, &data); err != nil {
+	reader := csv.NewReader(strings.NewReader(string(bytes)))
+
+	header, err := reader.Read()
+	if err != nil {
 		return nil, err
 	}
 
-	// read data into their tables
-	tables := make(map[string]*Table)
-	for _, d := range data {
-		if _, ok := tables[d.Table]; !ok {
-			tables[d.Table] = &Table{
-				Name: d.Table,
+	records, err := reader.ReadAll()
+	if err != nil {
+		return nil, err
+	}
+
+	tableMap := make(map[string]*Table)
+	for _, row := range records {
+		item := Record{}
+
+		var tableName = nilTable
+		for i, val := range row {
+			name := header[i]
+
+			switch {
+			case name == "table":
+				tableName = val
+			case name == "label":
+				item.Label = val
+			case name == "units":
+				item.Units = val
+			default:
+				str := val
+				if str == "" {
+					str = nilValue
+				}
+				item.Values = append(item.Values, str)
 			}
 		}
 
-		r := &Row{
-			X:     d.X,
-			Y:     d.Y,
-			Truth: d.Truth,
+		if _, ok := tableMap[tableName]; !ok {
+			tableMap[tableName] = &Table{
+				Name: tableName,
+				Keys: header,
+			}
 		}
-		tables[d.Table].Rows = append(tables[d.Table].Rows, r)
+
+		tableMap[tableName].Rows = append(tableMap[tableName].Rows, &item)
 	}
 
-	tableSlice := make([]*Table, 0, len(tables))
-	for _, v := range tables {
-		tableSlice = append(tableSlice, v)
+	tables := make([]Table, 0, len(tableMap))
+	for _, v := range tableMap {
+		tables = append(tables, *v)
 	}
 
-	return tableSlice, nil
+	return tables, nil
+}
+
+func (t *Table) Headers() []string {
+	headers := t.Keys
+	headers = slices.DeleteFunc(headers, func(x string) bool {
+		return x == "table" || x == "units"
+	})
+
+	return headers
+}
+
+func (t *Table) Size() (int, int) {
+	return len(t.Rows) + 1, len(t.Keys)
+}
+
+func (r *Record) Row() []string {
+	return append([]string{r.Label}, r.WithUnits()...)
+}
+
+func (r *Record) WithUnits() []string {
+	vals := r.Values
+	for i := range vals {
+		vals[i] = vals[i] + r.Units
+	}
+	return vals
 }
