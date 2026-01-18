@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"math"
 	"strconv"
+	"sync"
 
 	"github.com/Joey574/stats/internal/table"
 )
@@ -170,10 +171,19 @@ func RowStats(t *table.Table) {
 		return str
 	}
 
-	for _, r := range t.Rows {
-		vals := rowStats(r)
-		r.Values = append(r.Values, conv(vals, "", "")...)
+	var wg sync.WaitGroup
+	for _, row := range t.Rows {
+		wg.Add(1)
+
+		go func(r *table.Record) {
+			defer wg.Done()
+
+			vals := rowStats(r)
+			r.Values = append(r.Values, conv(vals, "", "")...)
+		}(row)
 	}
+	wg.Wait()
+
 }
 
 func rowStats(r *table.Record) []float64 {
