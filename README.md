@@ -28,35 +28,35 @@ Stats expects a csv in the form ```x,y,truth,table```
 
 Base case
 ``` csv
-x,y,truth,table
-0.4,0.2,0.3,example
-0.13,0.1,0.3,example
-0.32,0.5,0.3,example
+table,label,units,x1,x2,x3
+example,test 1,s,0.4,0.2,0.3
+example,test 2,s,0.13,0.1,0.3
+example,test 3,s,0.32,0.5,0.3
 ```
 <br>
 
 We can skip values if they're not known or not needed (number of commas still needs to be preserved)
 ``` csv
-x,y,truth,table
-0.4,,0.3,example
-0.13,,0.3,example
-0.32,,0.3,example
+table,label,units,x1,x2,x3
+example,test 1,s,0.4,0.2,
+example,test 2,s,0.13,,0.3
+example,test 3,s,,,0.3
 ```
 <br>
 
 We can also define multiple tables
 ``` csv
-x,y,truth,table
-0.4,0.2,0.3,example_1
-0.13,0.1,0.3,example_2
-0.32,0.5,0.3,example_2
+table,label,x1,y1
+example_1,test 1,0.4,0.2
+example_1,test 2,0.13,0.1
+example_2,test 3,0.32,0.5
 ```
 <br>
 
 Tables don't have to be defined next to each other either
 ``` csv
-x,y,truth,table
-0.4,0.2,0.3,example_2
-0.13,0.1,0.3,example_1
-0.32,0.5,0.3,example_2
+table,label,units,x1,x2,x3
+example_1,test 1,s,0.4,0.2,0.3
+example_2,test 2,s,0.13,0.1,0.3
+example_1,test 3,s,0.32,0.5,0.3
 ```
