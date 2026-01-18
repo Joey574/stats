@@ -12,6 +12,11 @@ go install github.com/Joey574/stats/cmd/stats@v0.0.5
 stats -f path/to/csv/file.csv
 ```
 
+You can also render to different formats, currently suports *text, color, svg, html*, default to text
+``` bash
+stats -f path/to/csv/file.csv -r svg
+```
+
 ### CSV Examples
 Stats expects a csv in the form ```x,y,truth,table```
 
