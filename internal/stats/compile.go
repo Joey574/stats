@@ -2,10 +2,12 @@ package stats
 
 import (
 	"fmt"
+	"slices"
 	"strings"
 
 	"github.com/Joey574/stats/internal/table"
 	"github.com/olekukonko/tablewriter"
+	"github.com/olekukonko/tablewriter/tw"
 )
 
 type CompiledTable struct {
@@ -22,23 +24,28 @@ type Record struct {
 }
 
 func (c *CompiledTable) Compile() {
+	r := ColumnStats(c.Table)
 	RowStats(c.Table)
-	c.Rows = append(c.Rows, ColumnStats(c.Table)...)
+	c.Rows = append(c.Rows, r...)
 }
 
-func (c *CompiledTable) Dump() string {
+func (c *CompiledTable) Dump(renderer tw.Renderer) string {
 	var b strings.Builder
 	rows, cols := c.Size()
 
 	b.WriteString(fmt.Sprintf("Table: \"%s\" (%d x %d)\n", c.Name, rows, cols))
+	head := c.Headers()
 
-	colTable := tablewriter.NewWriter(&b)
-	colTable.Header(c.Headers())
+	writer := tablewriter.NewTable(&b,
+		tablewriter.WithRenderer(renderer))
+	writer.Header(head)
 
 	for _, r := range c.Rows {
-		colTable.Append(r.Row())
+		strs := r.Compose()
+		strs = append(strs, slices.Repeat([]string{"-"}, len(head)-len(strs))...)
+		writer.Append(strs)
 	}
 
-	colTable.Render()
+	writer.Render()
 	return b.String()
 }

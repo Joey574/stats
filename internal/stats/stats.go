@@ -18,44 +18,49 @@ func ColumnStats(t *table.Table) []*table.Record {
 	ci95s := columnCI95s(sems)
 	cvs := columnCVs(stds, avgs)
 
-	conv := func(x []float64, prefix string, suffix string) []string {
-		str := make([]string, len(x))
+	conv := func(x []float64, prefix string, suffix string, usesUnits bool) []table.Value {
+		str := make([]table.Value, len(x))
 
 		for i := range x {
-			str[i] = fmt.Sprintf("%s%.2f%s", prefix, x[i], suffix)
+			str[i] = table.Value{
+				X:         fmt.Sprintf("%.2f", x[i]),
+				UsesUnits: usesUnits,
+				Prefix:    prefix,
+				Suffix:    suffix,
+			}
 		}
 		return str
 	}
 
-	avgStr := conv(avgs, "", "")
-	stdStr := conv(stds, "", "")
-	semStr := conv(sems, "", "")
-	ciStr := conv(ci95s, "±", "")
-	cvStr := conv(cvs, "", "")
+	avgStr := conv(avgs, "", "", true)
+	stdStr := conv(stds, "", "", true)
+	semStr := conv(sems, "", "", true)
+	ciStr := conv(ci95s, "±", "", true)
+	cvStr := conv(cvs, "", "%", false)
 
 	var records []*table.Record
 	records = append(records, &table.Record{
-		Label:  "mean",
+		Label:  "MEAN",
 		Units:  units,
 		Values: avgStr,
 	})
 	records = append(records, &table.Record{
-		Label:  "stddev",
+		Label:  "STDDEV",
 		Units:  units,
 		Values: stdStr,
 	})
 	records = append(records, &table.Record{
-		Label:  "sem",
+		Label:  "SEM",
 		Units:  units,
 		Values: semStr,
 	})
 	records = append(records, &table.Record{
-		Label:  "ci95",
+		Label:  "CI95",
 		Units:  units,
 		Values: ciStr,
 	})
 	records = append(records, &table.Record{
-		Label:  "cv",
+		Label:  "CV",
 		Units:  "%",
 		Values: cvStr,
 	})
@@ -70,7 +75,7 @@ func columnAverages(t *table.Table) []float64 {
 
 	for _, r := range t.Rows {
 		for i := range r.Values {
-			v, err := strconv.ParseFloat(r.Values[i], 64)
+			v, err := strconv.ParseFloat(r.Values[i].X, 64)
 			if err != nil {
 				continue
 			}
@@ -95,7 +100,7 @@ func columnStddevs(t *table.Table, mean []float64) []float64 {
 
 	for _, r := range t.Rows {
 		for i := range r.Values {
-			v, err := strconv.ParseFloat(r.Values[i], 64)
+			v, err := strconv.ParseFloat(r.Values[i].X, 64)
 			if err != nil {
 				continue
 			}
@@ -120,7 +125,7 @@ func columnSEMs(t *table.Table, stddev []float64) []float64 {
 
 	for _, r := range t.Rows {
 		for i := range r.Values {
-			_, err := strconv.ParseFloat(r.Values[i], 64)
+			_, err := strconv.ParseFloat(r.Values[i].X, 64)
 			if err != nil {
 				continue
 			}
@@ -160,16 +165,7 @@ func columnCVs(std []float64, mean []float64) []float64 {
 }
 
 func RowStats(t *table.Table) {
-	t.Keys = append(t.Keys, []string{"mean", "stddev", "sem", "ci95", "cv"}...)
-
-	conv := func(x []float64, prefix string, suffix string) []string {
-		str := make([]string, len(x))
-
-		for i := range x {
-			str[i] = fmt.Sprintf("%s%.2f%s", prefix, x[i], suffix)
-		}
-		return str
-	}
+	t.Keys = append(t.Keys, []string{"MEAN", "STDDEV", "SEM", "CI95", "CV"}...)
 
 	var wg sync.WaitGroup
 	for _, row := range t.Rows {
@@ -179,7 +175,13 @@ func RowStats(t *table.Table) {
 			defer wg.Done()
 
 			vals := rowStats(r)
-			r.Values = append(r.Values, conv(vals, "", "")...)
+			r.Values = append(r.Values, []table.Value{
+				{X: fmt.Sprintf("%.2f", vals[0]), UsesUnits: true},
+				{X: fmt.Sprintf("%.2f", vals[1]), UsesUnits: true},
+				{X: fmt.Sprintf("%.2f", vals[2]), UsesUnits: true},
+				{X: fmt.Sprintf("%.2f", vals[3]), UsesUnits: true, Prefix: "±"},
+				{X: fmt.Sprintf("%.2f", vals[4]), Suffix: "%"},
+			}...)
 		}(row)
 	}
 	wg.Wait()
@@ -192,7 +194,7 @@ func rowStats(r *table.Record) []float64 {
 	var variance float64
 
 	for i := range r.Values {
-		v, err := strconv.ParseFloat(r.Values[i], 64)
+		v, err := strconv.ParseFloat(r.Values[i].X, 64)
 		if err != nil {
 			continue
 		}
@@ -204,7 +206,7 @@ func rowStats(r *table.Record) []float64 {
 	mean := sum / count
 
 	for i := range r.Values {
-		v, err := strconv.ParseFloat(r.Values[i], 64)
+		v, err := strconv.ParseFloat(r.Values[i].X, 64)
 		if err != nil {
 			continue
 		}
@@ -215,7 +217,7 @@ func rowStats(r *table.Record) []float64 {
 	stddev := math.Sqrt(variance / count)
 	sem := stddev / math.Sqrt(count)
 	ci95 := 1.96 * sem
-	cv := stddev / mean
+	cv := stddev / mean * 100.0
 
 	return []float64{mean, stddev, sem, ci95, cv}
 }

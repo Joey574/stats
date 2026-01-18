@@ -10,11 +10,15 @@ import (
 	"github.com/Joey574/stats/internal/stats"
 	"github.com/Joey574/stats/internal/table"
 	"github.com/jessevdk/go-flags"
+	"github.com/olekukonko/tablewriter/renderer"
+	"github.com/olekukonko/tablewriter/tw"
 )
 
 type CLIArgs struct {
-	File    string `short:"f" long:"file" description:"csv file to read data from"`
-	Version bool   `long:"version" description:"prints version and exits"`
+	File    string `short:"f" long:"file"    description:"csv file to read data from"`
+	Version bool   `short:"v" long:"version" description:"prints version and exits"`
+
+	Renderer string `short:"r" long:"renderer" description:"configures the renderer used for the table (text, svg, html, color)" default:"text"`
 }
 
 var version string
@@ -28,7 +32,7 @@ Definitions:
 	Stddev: The average distance individual points are from the mean
 	SEM (Standard Error of the Mean): The uncertainty in the best estimate
 	CI95 (95% Confidence Interval): The range around the mean where we are 95% confident the true value is
-	CV (Coefficient of Variation): Meassures how "noisy" the samples are, < 3% is typically considered "good
+	CV (Coefficient of Variation): Measures how "noisy" the samples are, < 3% is typically considered "good
 
 Equations:
 	Mean := x̄ = (1/n) Σ x
@@ -73,8 +77,6 @@ func main() {
 		log.Fatalln(err)
 	}
 
-	printHeader()
-
 	// compile tables in parallel
 	var wg sync.WaitGroup
 	compiled := make([]stats.CompiledTable, len(tables))
@@ -88,8 +90,25 @@ func main() {
 	}
 	wg.Wait()
 
+	// get renderer
+	var r tw.Renderer
+	switch f.Renderer {
+	case "text":
+		r = renderer.NewBlueprint()
+	case "html":
+		r = renderer.NewHTML()
+	case "svg":
+		r = renderer.NewSVG()
+	case "color":
+		r = renderer.NewColorized()
+	default:
+		log.Fatalln("unsuported renderer", f.Renderer)
+	}
+
+	printHeader()
+
 	// dump data
 	for _, ct := range compiled {
-		fmt.Println(ct.Dump())
+		fmt.Println(ct.Dump(r))
 	}
 }

@@ -2,10 +2,21 @@ package table
 
 import (
 	"encoding/csv"
+	"fmt"
 	"os"
 	"slices"
 	"strings"
 )
+
+type Header struct {
+}
+
+type Value struct {
+	X         string
+	Prefix    string
+	Suffix    string
+	UsesUnits bool
+}
 
 type Table struct {
 	Name string
@@ -17,7 +28,7 @@ type Record struct {
 	Label string
 	Units string
 
-	Values []string
+	Values []Value
 }
 
 const nilTable = "no name"
@@ -61,7 +72,10 @@ func ParseTables(f string) ([]Table, error) {
 				if str == "" {
 					str = nilValue
 				}
-				item.Values = append(item.Values, str)
+				item.Values = append(item.Values, Value{
+					X:         val,
+					UsesUnits: true,
+				})
 			}
 		}
 
@@ -96,14 +110,14 @@ func (t *Table) Size() (int, int) {
 	return len(t.Rows) + 1, len(t.Keys)
 }
 
-func (r *Record) Row() []string {
-	return append([]string{r.Label}, r.WithUnits()...)
-}
-
-func (r *Record) WithUnits() []string {
-	vals := r.Values
+func (r *Record) Compose() []string {
+	vals := make([]string, len(r.Values))
 	for i := range vals {
-		vals[i] = vals[i] + r.Units
+		vals[i] = fmt.Sprintf("%s%s%s", r.Values[i].Prefix, r.Values[i].X, r.Values[i].Suffix)
+		if r.Values[i].UsesUnits {
+			vals[i] += r.Units
+		}
 	}
-	return vals
+
+	return append([]string{r.Label}, vals...)
 }
