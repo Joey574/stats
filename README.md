@@ -3,7 +3,7 @@ My personal statistics program to help be get through PHYS 121
 
 ## Download
 ``` bash
-go install github.com/Joey574/stats/cmd/stats@v0.0.6
+go install github.com/Joey574/stats/cmd/stats@v0.0.7
 ```
 
 ## Usage
@@ -14,7 +14,7 @@ stats -f path/to/csv/file.csv
 
 You can also render to different formats, currently suports *text, color, svg, html, markdown*, defaults to text
 ``` bash
-stats -f path/to/csv/file.csv -r svg
+stats -f path/to/csv/file.csv --svg
 ```
 
 ### CSV Examples

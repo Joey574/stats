@@ -2,14 +2,18 @@ package table
 
 import (
 	"encoding/csv"
-	"fmt"
+	"math"
 	"os"
 	"slices"
+	"strconv"
 	"strings"
+
+	"github.com/olekukonko/tablewriter"
+	"github.com/olekukonko/tablewriter/tw"
 )
 
 type Value struct {
-	X         string
+	X         float64
 	Prefix    string
 	Suffix    string
 	UsesUnits bool
@@ -21,15 +25,9 @@ type Table struct {
 	Rows []*Record
 }
 
-type Record struct {
-	Label string
-	Units string
-
-	Values []Value
-}
-
 const nilTable = "no name"
-const nilValue = "-"
+const nilValueRepl = "-"
+const nilValue = math.SmallestNonzeroFloat64
 
 func ParseTables(f string) ([]Table, error) {
 	bytes, err := os.ReadFile(f)
@@ -49,8 +47,7 @@ func ParseTables(f string) ([]Table, error) {
 		return nil, err
 	}
 
-	keys := slices.Clone(header)
-	keys = slices.DeleteFunc(keys, func(x string) bool { return x == "table" || x == "units" })
+	keys := slices.DeleteFunc(slices.Clone(header), func(x string) bool { return x == "table" || x == "units" })
 
 	tableMap := make(map[string]*Table)
 	for _, row := range records {
@@ -60,20 +57,21 @@ func ParseTables(f string) ([]Table, error) {
 		for i, val := range row {
 			name := header[i]
 
-			switch {
-			case name == "table":
+			switch name {
+			case "table":
 				tableName = val
-			case name == "label":
+			case "label":
 				item.Label = val
-			case name == "units":
+			case "units":
 				item.Units = val
 			default:
-				str := val
-				if str == "" {
-					str = nilValue
+				v, err := strconv.ParseFloat(val, 64)
+				if err != nil {
+					v = nilValue
 				}
+
 				item.Values = append(item.Values, Value{
-					X:         val,
+					X:         v,
 					UsesUnits: true,
 				})
 			}
@@ -97,18 +95,20 @@ func ParseTables(f string) ([]Table, error) {
 	return tables, nil
 }
 
-func (t *Table) Size() (int, int) {
-	return len(t.Rows) + 1, len(t.Keys)
+func (t *Table) Bytes() int64 {
+	return int64(8 * len(t.Rows) * len(t.Keys))
 }
 
-func (r *Record) Compose() []string {
-	vals := make([]string, len(r.Values))
-	for i := range vals {
-		vals[i] = fmt.Sprintf("%s%s%s", r.Values[i].Prefix, r.Values[i].X, r.Values[i].Suffix)
-		if r.Values[i].UsesUnits {
-			vals[i] += r.Units
-		}
+func (c *Table) Dump(renderer tw.Renderer) string {
+	var b strings.Builder
+	writer := tablewriter.NewTable(&b,
+		tablewriter.WithRenderer(renderer))
+	writer.Header(c.Keys)
+
+	for _, r := range c.Rows {
+		writer.Append(r.Compose())
 	}
 
-	return append([]string{r.Label}, vals...)
+	writer.Render()
+	return b.String()
 }
