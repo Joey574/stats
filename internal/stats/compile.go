@@ -33,11 +33,10 @@ func (c *CompiledTable) Dump(renderer tw.Renderer) string {
 	rows, cols := c.Size()
 
 	b.WriteString(fmt.Sprintf("Table: \"%s\" (%d x %d)\n", c.Name, rows, cols))
-	head := c.Headers()
 
 	writer := tablewriter.NewTable(&b,
 		tablewriter.WithRenderer(renderer))
-	writer.Header(head)
+	writer.Header(c.Keys)
 
 	for _, r := range c.Rows {
 		writer.Append(r.Compose())

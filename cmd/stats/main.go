@@ -32,11 +32,11 @@ Definitions:
 	Stddev: The average distance individual points are from the mean
 	SEM (Standard Error of the Mean): The uncertainty in the best estimate
 	CI95 (95% Confidence Interval): The range around the mean where we are 95% confident the true value is
-	CV (Coefficient of Variation): Measures how "noisy" the samples are, < 3% is typically considered "good
+	CV (Coefficient of Variation): Measures how "noisy" the samples are, < 3% is typically considered "good"
 
 Equations:
-	Mean := x̄ = (1/n) Σ x
-	Stddev := σ = √ (1/n) Σ (x-x̄)²
+	Mean := x̄ = (1/n) Σ xᵢ
+	Stddev := σ = √ (1/n) Σ (xᵢ-x̄)²
 	SEM := s = σ / √n
 	CI₉₅ := 1.96 * s
 	CV := σ / x̄`)
@@ -104,7 +104,7 @@ func main() {
 	case "markdown":
 		r = renderer.NewMarkdown()
 	default:
-		log.Fatalln("unsuported renderer", f.Renderer)
+		log.Fatalf("unsupported renderer \"%s\"\n", f.Renderer)
 	}
 
 	printHeader()

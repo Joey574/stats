@@ -8,9 +8,6 @@ import (
 	"strings"
 )
 
-type Header struct {
-}
-
 type Value struct {
 	X         string
 	Prefix    string
@@ -100,17 +97,8 @@ func ParseTables(f string) ([]Table, error) {
 	return tables, nil
 }
 
-func (t *Table) Headers() []string {
-	headers := t.Keys
-	headers = slices.DeleteFunc(headers, func(x string) bool {
-		return x == "table" || x == "units"
-	})
-
-	return headers
-}
-
 func (t *Table) Size() (int, int) {
-	return len(t.Rows) + 1, len(t.Headers())
+	return len(t.Rows) + 1, len(t.Keys)
 }
 
 func (r *Record) Compose() []string {
