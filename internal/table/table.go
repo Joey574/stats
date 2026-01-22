@@ -2,12 +2,14 @@ package table
 
 import (
 	"encoding/csv"
+	"io"
 	"math"
 	"os"
 	"slices"
 	"strconv"
 	"strings"
 
+	fixtures "github.com/Joey574/stats/internal/testfixtures"
 	"github.com/olekukonko/tablewriter"
 	"github.com/olekukonko/tablewriter/tw"
 )
@@ -29,37 +31,74 @@ const nilTable = "no name"
 const nilValueRepl = "-"
 const nilValue = math.SmallestNonzeroFloat64
 
+func ParseTestTable(f string) (Table, error) {
+	file, err := fixtures.TestCSV.Open(f)
+	if err != nil {
+		return Table{}, err
+	}
+
+	reader := csv.NewReader(file)
+	reader.ReuseRecord = true
+
+	head, err := reader.Read()
+	t, err := ParseTable(reader, slices.Clone(head))
+	if err != nil && err != io.EOF {
+		return Table{}, err
+	}
+
+	return t, nil
+}
+
 func ParseTables(f string) ([]Table, error) {
-	bytes, err := os.ReadFile(f)
+	file, err := os.Open(f)
 	if err != nil {
 		return nil, err
 	}
 
-	reader := csv.NewReader(strings.NewReader(string(bytes)))
+	tables := make([]Table, 0, 1)
+	reader := csv.NewReader(file)
+	reader.ReuseRecord = true
 
-	header, err := reader.Read()
-	if err != nil {
-		return nil, err
+	for {
+		head, err := reader.Read()
+		if err != nil {
+			if err == io.EOF {
+				return tables, nil
+			}
+			return nil, err
+		}
+
+		t, err := ParseTable(reader, slices.Clone(head))
+		if err != nil && err != io.EOF {
+			return nil, err
+		}
+
+		tables = append(tables, t)
 	}
+}
 
-	records, err := reader.ReadAll()
-	if err != nil {
-		return nil, err
-	}
+func ParseTable(reader *csv.Reader, header []string) (Table, error) {
+	keys := slices.DeleteFunc(slices.Clone(header), func(x string) bool {
+		return x == "table" || x == "label" || x == "units"
+	})
 
-	keys := slices.DeleteFunc(slices.Clone(header), func(x string) bool { return x == "table" || x == "units" })
+	name := nilTable
+	table := Table{Keys: keys}
 
-	tableMap := make(map[string]*Table)
-	for _, row := range records {
-		item := Record{}
+	for {
+		row, err := reader.Read()
+		if err != nil {
+			table.Name = name
+			return table, err
+		}
 
-		var tableName = nilTable
+		item := Record{Values: make([]Value, 0, len(keys))}
 		for i, val := range row {
 			name := header[i]
 
 			switch name {
 			case "table":
-				tableName = val
+				name = val
 			case "label":
 				item.Label = val
 			case "units":
@@ -77,36 +116,26 @@ func ParseTables(f string) ([]Table, error) {
 			}
 		}
 
-		if _, ok := tableMap[tableName]; !ok {
-			tableMap[tableName] = &Table{
-				Name: tableName,
-				Keys: keys,
-			}
-		}
-
-		tableMap[tableName].Rows = append(tableMap[tableName].Rows, &item)
+		table.Rows = append(table.Rows, &item)
 	}
-
-	tables := make([]Table, 0, len(tableMap))
-	for _, v := range tableMap {
-		tables = append(tables, *v)
-	}
-
-	return tables, nil
 }
 
 func (t *Table) Bytes() int64 {
 	return int64(8 * len(t.Rows) * len(t.Keys))
 }
 
+func (t *Table) Headers() []string {
+	return append([]string{"Label"}, t.Keys...)
+}
+
 func (c *Table) Dump(renderer tw.Renderer) string {
 	var b strings.Builder
 	writer := tablewriter.NewTable(&b,
 		tablewriter.WithRenderer(renderer))
-	writer.Header(c.Keys)
+	writer.Header(c.Headers())
 
 	for _, r := range c.Rows {
-		writer.Append(r.Compose())
+		writer.Append(r.Compose(len(c.Keys)))
 	}
 
 	writer.Render()

@@ -33,6 +33,8 @@ func main() {
 			switch {
 			case f.ForceTable:
 				compiled[idx].CompileForceTable()
+			case f.FormatTable:
+				break // format table just creates a table dump, doesn't compute anything else
 			default:
 				compiled[idx].CompileDataTable()
 			}

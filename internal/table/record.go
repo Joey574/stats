@@ -9,9 +9,10 @@ type Record struct {
 	Values []Value
 }
 
-func (r *Record) Compose() []string {
-	vals := make([]string, len(r.Values))
-	for i := range vals {
+func (r *Record) Compose(n int) []string {
+	vals := make([]string, n)
+
+	for i := range r.Values {
 		if r.Values[i].X == nilValue {
 			vals[i] = nilValueRepl
 		} else {
@@ -21,6 +22,10 @@ func (r *Record) Compose() []string {
 				vals[i] += r.Units
 			}
 		}
+	}
+
+	for i := len(r.Values); i < n; i++ {
+		vals[i] = nilValueRepl
 	}
 
 	return append([]string{r.Label}, vals...)

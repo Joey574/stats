@@ -2,89 +2,119 @@ package stats
 
 import (
 	"math"
-	"slices"
 
 	"github.com/Joey574/stats/internal/table"
 )
 
+const nMetrics = 5
 const nilString = ""
 const nilValue = math.SmallestNonzeroFloat64
 
 func TableStats(t *table.Table) {
+	cols, rows := len(t.Keys), len(t.Rows)
+
 	units := t.Rows[0].Units
-	cols, rows := tableStats(t)
+	colStats, rowStats := tableStats(t)
 
-	conv := func(x []float64, prefix string, suffix string, usesUnits bool) []table.Value {
-		val := make([]table.Value, len(x))
-
-		for i := range x {
-			val[i] = table.Value{
-				X:         x[i],
+	valuePool := make([]table.Value, nMetrics*cols)
+	conv := func(idx int, prefix string, suffix string, usesUnits bool) []table.Value {
+		c := colStats[idx]
+		for i := range c {
+			valuePool[idx*cols+i] = table.Value{
+				X:         c[i],
 				UsesUnits: usesUnits,
 				Prefix:    prefix,
 				Suffix:    suffix,
 			}
 		}
-		return val
+		return valuePool[idx*cols : idx*cols+cols]
 	}
 
-	// append row stats
-	t.Keys = append(t.Keys, []string{"MEAN", "STDDEV", "SEM", "CI₉₅", "CV"}...)
-	for i, r := range t.Rows {
-		r.Values = slices.Grow(r.Values, 5)
-		r.Values = append(r.Values,
-			table.Value{X: rows[0][i], UsesUnits: true},
-			table.Value{X: rows[1][i], UsesUnits: true},
-			table.Value{X: rows[2][i], UsesUnits: true},
-			table.Value{X: rows[3][i], UsesUnits: true, Prefix: "±"},
-			table.Value{X: rows[4][i], Suffix: "%"},
-		)
+	// append row stats if n cols > 1
+	if cols > 1 {
+		t.Keys = append(t.Keys, []string{"MEAN", "STDDEV", "SEM", "CI₉₅", "CV"}...)
+		for i, r := range t.Rows {
+			r.Values = append(r.Values,
+				table.Value{X: rowStats[0][i], UsesUnits: true},
+				table.Value{X: rowStats[1][i], UsesUnits: true},
+				table.Value{X: rowStats[2][i], UsesUnits: true},
+				table.Value{X: rowStats[3][i], UsesUnits: true, Prefix: "±"},
+				table.Value{X: rowStats[4][i], Suffix: "%"},
+			)
+		}
 	}
 
-	// append column stats
-	t.Rows = slices.Grow(t.Rows, 5)
-	t.Rows = append(t.Rows, []*table.Record{
-		{
-			Label:  "MEAN",
-			Units:  units,
-			Values: conv(cols[0], nilString, nilString, true),
-		},
-		{
-			Label:  "STDDEV",
-			Units:  units,
-			Values: conv(cols[1], nilString, nilString, true),
-		},
-		{
-			Label:  "SEM",
-			Units:  units,
-			Values: conv(cols[2], nilString, nilString, true),
-		},
-		{
-			Label:  "CI₉₅",
-			Units:  units,
-			Values: conv(cols[3], "±", nilString, true),
-		},
-		{
-			Label:  "CV",
-			Units:  nilString,
-			Values: conv(cols[4], nilString, "%", false),
-		},
-	}...)
+	// append column stats if n rows > 1
+	if rows > 1 {
+		t.Rows = append(t.Rows, []*table.Record{
+			{
+				Label:  "MEAN",
+				Units:  units,
+				Values: conv(0, nilString, nilString, true),
+			},
+			{
+				Label:  "STDDEV",
+				Units:  units,
+				Values: conv(1, nilString, nilString, true),
+			},
+			{
+				Label:  "SEM",
+				Units:  units,
+				Values: conv(2, nilString, nilString, true),
+			},
+			{
+				Label:  "CI₉₅",
+				Units:  units,
+				Values: conv(3, "±", nilString, true),
+			},
+			{
+				Label:  "CV",
+				Units:  nilString,
+				Values: conv(4, nilString, "%", false),
+			},
+		}...)
+	}
 }
 
-func tableStats(t *table.Table) ([5][]float64, [5][]float64) {
+func tableStats(t *table.Table) ([nMetrics][]float64, [nMetrics][]float64) {
 	rowCount := len(t.Rows)
-	colCount := len(t.Rows[0].Values)
+	colCount := len(t.Keys)
 
-	rowBlock := make([]float64, 5*rowCount)
-	colBlock := make([]float64, 5*colCount)
+	dataBlock := make([]float64, nMetrics*(rowCount+colCount))
+	rowBlock := dataBlock[:nMetrics*rowCount]
+	colBlock := dataBlock[nMetrics*rowCount:]
 
-	rowMeans, rowStds, rowSems, rowCi95, rowCvs := rowBlock[:rowCount], rowBlock[rowCount:2*rowCount], rowBlock[2*rowCount:3*rowCount], rowBlock[3*rowCount:4*rowCount], rowBlock[4*rowCount:5*rowCount]
-	colMeans, colStds, colSems, colCi95, colCvs := colBlock[:colCount], colBlock[colCount:2*colCount], colBlock[2*colCount:3*colCount], colBlock[3*colCount:4*colCount], colBlock[4*colCount:5*colCount]
+	// parse out row blocked data
+	rowMeans, rowStds, rowSems, rowCi95, rowCvs :=
+		rowBlock[:rowCount],
+		rowBlock[rowCount:2*rowCount],
+		rowBlock[2*rowCount:3*rowCount],
+		rowBlock[3*rowCount:4*rowCount],
+		rowBlock[4*rowCount:5*rowCount]
 
-	colFilled := make([]uint32, colCount)
-	rowFilled := make([]uint32, rowCount)
+	// parse out col blocked data
+	colMeans, colStds, colSems, colCi95, colCvs :=
+		colBlock[:colCount],
+		colBlock[colCount:2*colCount],
+		colBlock[2*colCount:3*colCount],
+		colBlock[3*colCount:4*colCount],
+		colBlock[4*colCount:5*colCount]
 
+	// parse out more blocked data
+	colFilled := make([]uint32, colCount+rowCount)
+	rowFilled := colFilled[colCount:]
+	colFilled = colFilled[:colCount]
+
+	meanTableStats(t, colMeans, rowMeans, colFilled, rowFilled)
+	stddevTableStats(t, colStds, rowStds, colMeans, rowMeans, colFilled, rowFilled)
+
+	miscTableStats(colMeans, colStds, colSems, colCi95, colCvs, colFilled)
+	miscTableStats(rowMeans, rowStds, rowSems, rowCi95, rowCvs, rowFilled)
+
+	return [nMetrics][]float64{colMeans, colStds, colSems, colCi95, colCvs}, [nMetrics][]float64{rowMeans, rowStds, rowSems, rowCi95, rowCvs}
+}
+
+func meanTableStats(t *table.Table, cm []float64, rm []float64, cf []uint32, rf []uint32) {
 	// collect sums into mean
 	for i, r := range t.Rows {
 		for k := range r.Values {
@@ -92,60 +122,53 @@ func tableStats(t *table.Table) ([5][]float64, [5][]float64) {
 				continue
 			}
 
-			colMeans[k] += r.Values[k].X
-			rowMeans[i] += r.Values[k].X
-			colFilled[k]++
-			rowFilled[i]++
+			cm[k] += r.Values[k].X
+			rm[i] += r.Values[k].X
+			cf[k]++
+			rf[i]++
 		}
 	}
 
-	// compute col mean
-	for i := range colMeans {
-		colMeans[i] /= float64(colFilled[i])
+	for i := range cm {
+		cm[i] /= float64(cf[i])
 	}
 
-	for i := range rowMeans {
-		rowMeans[i] /= float64(rowFilled[i])
+	for i := range rm {
+		rm[i] /= float64(rf[i])
 	}
+}
 
-	// compute variance
+func stddevTableStats(t *table.Table, cs []float64, rs []float64, cm []float64, rm []float64, cf []uint32, rf []uint32) {
 	for i, r := range t.Rows {
 		for k := range r.Values {
 			if r.Values[k].X == nilValue {
 				continue
 			}
 
-			cs := r.Values[k].X - colMeans[k]
-			rs := r.Values[k].X - rowMeans[i]
+			cv := r.Values[k].X - cm[k]
+			rv := r.Values[k].X - rm[i]
 
-			colStds[k] += cs * cs
-			rowStds[i] += rs * rs
+			cs[k] += cv * cv
+			rs[i] += rv * rv
 		}
 	}
 
 	// compute col stds
-	for i := range colStds {
-		colStds[i] = math.Sqrt(colStds[i] / float64(colFilled[i]))
+	for i := range cs {
+		cs[i] = math.Sqrt(cs[i] / float64(cf[i]))
 	}
 
 	// compute row stds
-	for i := range rowStds {
-		rowStds[i] = math.Sqrt(rowStds[i] / float64(rowFilled[i]))
+	for i := range rs {
+		rs[i] = math.Sqrt(rs[i] / float64(rf[i]))
 	}
+}
 
+func miscTableStats(m []float64, std []float64, se []float64, ci []float64, cv []float64, f []uint32) {
 	// loop to compute col SEMs, CVs, and CI95s
-	for i := range colSems {
-		colSems[i] = colStds[i] / math.Sqrt(float64(colFilled[i]))
-		colCvs[i] = colStds[i] / colMeans[i] * 100.0
-		colCi95[i] = 1.96 * colSems[i]
+	for i := range m {
+		se[i] = std[i] / math.Sqrt(float64(f[i]))
+		cv[i] = std[i] / m[i] * 100.0
+		ci[i] = 1.96 * se[i]
 	}
-
-	// loop to compute row SEMs, CVs, and CI95s
-	for i := range rowSems {
-		rowSems[i] = rowStds[i] / math.Sqrt(float64(rowFilled[i]))
-		rowCvs[i] = rowStds[i] / rowMeans[i] * 100.0
-		rowCi95[i] = 1.96 * rowSems[i]
-	}
-
-	return [5][]float64{colMeans, colStds, colSems, colCi95, colCvs}, [5][]float64{rowMeans, rowStds, rowSems, rowCi95, rowCvs}
 }
