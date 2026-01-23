@@ -129,6 +129,10 @@ func (t *Table) Headers() []string {
 }
 
 func (c *Table) Dump(renderer tw.Renderer) string {
+	if renderer == nil {
+		return ""
+	}
+
 	var b strings.Builder
 	writer := tablewriter.NewTable(&b,
 		tablewriter.WithRenderer(renderer))
