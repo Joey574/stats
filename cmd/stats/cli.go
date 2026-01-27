@@ -20,9 +20,10 @@ type RendererArgs struct {
 }
 
 type TableArgs struct {
-	DataTable   bool `long:"data"   description:"creates a data table (default: true)"`
-	ForceTable  bool `long:"force"  description:"creates and solves a force table"`
-	FormatTable bool `long:"format" description:"formats the table and doesn't do anything else"`
+	DataTable   bool   `long:"data"   description:"creates a data table (default: true)"`
+	ForceTable  bool   `long:"force"  description:"creates and solves a force table"`
+	FormatTable bool   `long:"format" description:"formats the table and doesn't do anything else"`
+	Label       string `long:"label"  description:"set custom 'label' header" default:"label"`
 }
 
 type CLIArgs struct {

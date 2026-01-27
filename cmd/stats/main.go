@@ -44,6 +44,6 @@ func main() {
 
 	// dump data
 	for _, ct := range compiled {
-		fmt.Println(ct.Dump(f.Renderer()))
+		fmt.Println(ct.Dump(f.Renderer(), f.Label))
 	}
 }
