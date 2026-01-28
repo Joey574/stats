@@ -2,13 +2,6 @@ package table
 
 import "fmt"
 
-type Record struct {
-	Label string
-	Units string
-
-	Values []Value
-}
-
 func (r *Record) Compose(n int) []string {
 	vals := make([]string, n)
 

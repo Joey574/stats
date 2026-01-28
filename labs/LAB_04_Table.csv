@@ -1,0 +1,3 @@
+label,table_height (cm),ramp_length (cm),ramp_angle (d),paper_distance (cm)
+measurements,87,36,-6,55
+uncertainty,0.1,0.2,1,1

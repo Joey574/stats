@@ -14,19 +14,6 @@ import (
 	"github.com/olekukonko/tablewriter/tw"
 )
 
-type Value struct {
-	X         float64
-	Prefix    string
-	Suffix    string
-	UsesUnits bool
-}
-
-type Table struct {
-	Name string
-	Keys []string
-	Rows []Record
-}
-
 const nilTable = "no name"
 const nilValueRepl = "-"
 const nilValue = math.SmallestNonzeroFloat64
