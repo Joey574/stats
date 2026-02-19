@@ -5,18 +5,17 @@ import (
 	"log"
 	"sync"
 
+	"github.com/Joey574/stats/internal/cli"
+	"github.com/Joey574/stats/internal/parser"
 	"github.com/Joey574/stats/internal/stats"
-	"github.com/Joey574/stats/internal/table"
 )
 
-var version string
-
 func main() {
-	var f CLIArgs
+	var f cli.CLIArgs
 	f.Parse()
 
 	// read in csv
-	tables, err := table.ParseTables(f.File, f.MathEq)
+	tables, err := parser.ParseTables(f)
 	if err != nil {
 		log.Fatalln(err)
 	}
@@ -28,20 +27,19 @@ func main() {
 		wg.Add(1)
 		go func(idx int) {
 			defer wg.Done()
-			compiled[idx] = stats.CompiledTable{Table: &t}
+			compiled[idx] = stats.CompiledTable{Table: t}
 
-			switch {
-			case f.FormatTable:
-				break // format table just creates a table dump, doesn't compute anything else
-			default:
-				compiled[idx].CompileDataTable()
+			if f.FormatTable {
+				return
 			}
+
+			compiled[idx].CompileDataTable()
 		}(i)
 	}
 	wg.Wait()
 
 	// dump data
 	for _, ct := range compiled {
-		fmt.Println(ct.Dump(f.Renderer(), f.Label))
+		fmt.Println(ct.Dump(f))
 	}
 }

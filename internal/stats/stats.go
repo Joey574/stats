@@ -18,10 +18,10 @@ func TableStats(t *table.Table) {
 		t.Keys = append(t.Keys, []string{"MEAN", "STDDEV", "SEM", "CI₉₅", "CV"}...)
 		for i := range t.Rows {
 			t.Rows[i].Values = append(t.Rows[i].Values,
-				table.Value{X: rowStats[0][i], UsesUnits: true},
-				table.Value{X: rowStats[1][i], UsesUnits: true},
-				table.Value{X: rowStats[2][i], UsesUnits: true},
-				table.Value{X: rowStats[3][i], UsesUnits: true, Prefix: "±"},
+				table.Value{X: rowStats[0][i]},
+				table.Value{X: rowStats[1][i]},
+				table.Value{X: rowStats[2][i]},
+				table.Value{X: rowStats[3][i], Prefix: "±"},
 				table.Value{X: rowStats[4][i], Suffix: "%"},
 			)
 		}

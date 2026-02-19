@@ -1,3 +1,3 @@
 package table
 
-var reserved = []string{"table", "label", "units", "constants"}
+var Reserved = []string{"table", "label", "units", "constants"}

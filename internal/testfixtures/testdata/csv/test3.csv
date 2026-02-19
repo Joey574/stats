@@ -1,3 +1,3 @@
-table,label,avg,units
-People,joey,2.94,s
-People,sujan,2.94,s
+label,avg
+joey,2.94
+sujan,2.94

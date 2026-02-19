@@ -1,4 +1,4 @@
-package main
+package cli
 
 import (
 	"fmt"
@@ -11,8 +11,11 @@ import (
 	"github.com/olekukonko/tablewriter/tw"
 )
 
+var version string
+
 type RendererArgs struct {
 	Text     bool `long:"text"     description:"outputs the table in text format (default: true)"`
+	CSV      bool `long:"csv" description:"outputs the table in csv format"`
 	SVG      bool `long:"svg"      description:"outputs the table in svg format"`
 	Html     bool `long:"html"     description:"outputs the table in html format"`
 	Color    bool `long:"color"    description:"outputs the table in color format"`
@@ -20,9 +23,8 @@ type RendererArgs struct {
 }
 
 type TableArgs struct {
-	DataTable   bool   `long:"data"     description:"creates a data table (default: true)"`
 	FormatTable bool   `long:"format"   description:"formats the table and doesn't do anything else"`
-	MathEq      string `long:"equation" description:"applies the provided equation over the table" default:"x"`
+	MathEq      string `long:"equation" description:"applies the provided equation over the table"`
 	Label       string `long:"label"    description:"set custom 'label' header" default:"label"`
 }
 
@@ -92,6 +94,8 @@ func (r *RendererArgs) Renderer() tw.Renderer {
 		ren = renderer.NewColorized()
 	case r.Markdown:
 		ren = renderer.NewMarkdown()
+	case r.CSV:
+		ren = nil
 	default:
 		ren = renderer.NewBlueprint()
 	}
