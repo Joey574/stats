@@ -7,8 +7,9 @@ type Table struct {
 }
 
 type Record struct {
-	Label string
-	Units string
+	Label     string
+	Units     string
+	Constants string
 
 	Values []Value
 }

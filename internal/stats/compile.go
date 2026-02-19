@@ -11,6 +11,3 @@ type CompiledTable struct {
 func (c *CompiledTable) CompileDataTable() {
 	TableStats(c.Table)
 }
-
-func (c *CompiledTable) CompileForceTable() {
-}

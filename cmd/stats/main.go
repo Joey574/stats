@@ -16,7 +16,7 @@ func main() {
 	f.Parse()
 
 	// read in csv
-	tables, err := table.ParseTables(f.File)
+	tables, err := table.ParseTables(f.File, f.MathEq)
 	if err != nil {
 		log.Fatalln(err)
 	}
@@ -31,8 +31,6 @@ func main() {
 			compiled[idx] = stats.CompiledTable{Table: &t}
 
 			switch {
-			case f.ForceTable:
-				compiled[idx].CompileForceTable()
 			case f.FormatTable:
 				break // format table just creates a table dump, doesn't compute anything else
 			default:

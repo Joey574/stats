@@ -10,6 +10,7 @@ import (
 	"strings"
 
 	fixtures "github.com/Joey574/stats/internal/testfixtures"
+	"github.com/Knetic/govaluate"
 	"github.com/olekukonko/tablewriter"
 	"github.com/olekukonko/tablewriter/tw"
 )
@@ -28,7 +29,7 @@ func ParseTestTable(f string) (Table, error) {
 	reader.ReuseRecord = true
 
 	head, err := reader.Read()
-	t, err := ParseTable(reader, slices.Clone(head))
+	t, err := ParseTable(reader, slices.Clone(head), nil)
 	if err != nil && err != io.EOF {
 		return Table{}, err
 	}
@@ -36,8 +37,13 @@ func ParseTestTable(f string) (Table, error) {
 	return t, nil
 }
 
-func ParseTables(f string) ([]Table, error) {
+func ParseTables(f string, eq string) ([]Table, error) {
 	file, err := os.Open(f)
+	if err != nil {
+		return nil, err
+	}
+
+	expr, err := govaluate.NewEvaluableExpression(eq)
 	if err != nil {
 		return nil, err
 	}
@@ -55,7 +61,7 @@ func ParseTables(f string) ([]Table, error) {
 			return nil, err
 		}
 
-		t, err := ParseTable(reader, slices.Clone(head))
+		t, err := ParseTable(reader, slices.Clone(head), expr)
 		if err != nil && err != io.EOF {
 			return nil, err
 		}
@@ -64,7 +70,7 @@ func ParseTables(f string) ([]Table, error) {
 	}
 }
 
-func ParseTable(reader *csv.Reader, header []string) (Table, error) {
+func ParseTable(reader *csv.Reader, header []string, expr *govaluate.EvaluableExpression) (Table, error) {
 	keys := slices.DeleteFunc(slices.Clone(header), func(x string) bool {
 		return slices.Contains(reserved, x)
 	})
@@ -90,9 +96,22 @@ func ParseTable(reader *csv.Reader, header []string) (Table, error) {
 				record.Label = val
 			case "units":
 				record.Units = val
+			case "constants":
+				record.Constants = val
 			default:
 				v, err := strconv.ParseFloat(val, 64)
 				if err != nil {
+					v = nilValue
+				}
+
+				params := makeParams(v, record.Constants)
+				result, err := expr.Evaluate(params)
+				if err != nil {
+					return table, err
+				}
+
+				v, ok := result.(float64)
+				if !ok {
 					v = nilValue
 				}
 
@@ -105,6 +124,31 @@ func ParseTable(reader *csv.Reader, header []string) (Table, error) {
 
 		table.Rows = append(table.Rows, record)
 	}
+}
+
+func makeParams(v float64, constants string) map[string]interface{} {
+	params := make(map[string]interface{})
+	params["x"] = v
+
+	// we now have a slice of strings in the form x=n
+	// where x is a string, and n is a numerical value
+	consts := strings.SplitSeq(constants, ";")
+
+	for c := range consts {
+		s := strings.Split(c, "=")
+		if len(s) != 2 {
+			continue
+		}
+
+		x, err := strconv.ParseFloat(s[1], 64)
+		if err != nil {
+			continue
+		}
+
+		params[s[0]] = x
+	}
+
+	return params
 }
 
 func (t *Table) Bytes() int64 {
