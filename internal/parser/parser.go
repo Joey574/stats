@@ -105,6 +105,7 @@ func ParseTable(scanner *bufio.Scanner, expr *govaluate.EvaluableExpression) (*t
 
 		record := table.Record{Values: make([]table.Value, 0, len(keys))}
 
+		// TODO : Allow user to decide how expr is applied ie arithmetic mean vs harmonic mean
 		// parse out key, val pairs in the row
 		for i, val := range row {
 			record.Append(headers[i], val, expr)

@@ -11,10 +11,10 @@ const nilValue = math.SmallestNonzeroFloat64
 
 func TableStats(t *table.Table) {
 	cols := len(t.Keys)
-	rowStats := tableStats(t)
 
 	// append row stats if n cols > 1
 	if cols > 1 {
+		rowStats := tableStats(t)
 		t.Keys = append(t.Keys, []string{"MEAN", "STDDEV", "SEM", "CI₉₅", "CV"}...)
 		for i := range t.Rows {
 			t.Rows[i].Values = append(t.Rows[i].Values,

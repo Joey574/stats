@@ -1,0 +1,48 @@
+# g1 mass = 199.57g
+# g2 mass = 195.67g (weighted later)
+
+# chase collision 
+# flag width = 2.5cm
+# x1g1 -> first glider
+# x1g2 -> second glider
+# v1 -> velocity through first gate
+# v2 -> velocity through second gate
+# t1 & t2 -> time to pass respective gate
+# TODO : fix velocity values to be accurate to flag width
+label,t1r1,t1r2,t2r2,t2r2
+v1,0.723,1.396,1.330,2.118
+v2,1.159,0.837,2.066,1.384
+t1,0.106,0.055,0.057,0.036
+t2,0.066,0.091,0.037,0.055
+
+
+# head on collision
+# added mass of g2 = 199.49g
+# velocity through gates now comes from same glider rebounded after collision
+label,t1r1,t1r2
+v1,43.560,62.458
+v2,38.701,6.369
+t1,0.028,0.019
+t2,0.031,0.188
+
+
+# unique collisions - elastic
+# one glider in middle of both photo gates stationary
+# another will approach from gate 1 and collide
+# no additional mass is applied
+label,t1,t2
+v1,19.026,28.302
+v2,18.154,27.335
+t1,0.063,0.042
+t2,0.066,0.046
+
+
+# unique collisions - inelastic
+# one glider in middle of both photo gates stationary
+# another will approach from gate 1 and collide
+# no additional mass is applied
+label,t1,t2
+v1,40.845,25.695
+v2,17.471,12.358
+t1,0.029,0.047
+t2,0.069,0.097
