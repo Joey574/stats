@@ -14,7 +14,7 @@ func (r *Record) Compose(n int) []string {
 		if r.Values[i].X == nilValue {
 			vals[i] = nilValueRepl
 		} else {
-			vals[i] = fmt.Sprintf("%s%.2f%s", r.Values[i].Prefix, r.Values[i].X, r.Values[i].Suffix)
+			vals[i] = fmt.Sprintf("%s%.3f%s", r.Values[i].Prefix, r.Values[i].X, r.Values[i].Suffix)
 		}
 	}
 
@@ -28,20 +28,23 @@ func (r *Record) Compose(n int) []string {
 // Modifies record based on the key, val, and provided expr
 func (r *Record) Append(key string, val string, expr *govaluate.EvaluableExpression) {
 	var ok bool
+	var constants string
 
 	switch key {
 	case "label":
 		r.Label = val
 	case "constants":
-		r.Constants = val
+		// stores row specific constants for applied expressions
+		constants = val
 	default:
 		v, err := strconv.ParseFloat(val, 64)
 		if err != nil {
 			v = nilValue
 		}
 
+		// if expression is nil we just fall through and append the value as is
 		if expr != nil {
-			params := makeParams(v, r.Constants)
+			params := makeParams(v, constants)
 			result, err := expr.Evaluate(params)
 			if err != nil {
 				v = nilValue
