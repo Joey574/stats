@@ -18,7 +18,7 @@ t2,0.066,0.091,0.037,0.055
 
 
 # head on collision
-# added mass to g2 is added. added m = 199.49g
+# added mass to g2. added mass = 199.49g
 label,t1r1,t1r2
 v1,0.893,1.316
 v2,0.806,0.133
